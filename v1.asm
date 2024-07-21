@@ -21,15 +21,17 @@
     exit_msg db 'Program Terminated$', 0
 
     ; inventory
-    num_bananas db 25   ; 8-bit integer value
-    ; num_apples dw 10    ; number of apples
+    num_bananas dw 25   ; 16-bit integer value
+    num_apples dw 14    ; number of apples
 
     bananas_str db 'bananas : $', 0
     apples_str db 'apples : $', 0
 
-    newline db 0Dh, 0Ah, '$'  ; CR LF sequence for new line
-.code
+    newline db 0Dh, 0Ah, '$'    ; CR LF sequence for new line
+    buffer db 6 dup('$')        ; buffer to store ASCII representations
 
+
+.code
 ; print string normally
 print MACRO str
     mov dx,offset str   ; load the offset address of the parameter into dx
@@ -47,6 +49,41 @@ println MACRO str
     int 21h
 ENDM
 
+; print number macro, designed to work with immediate values
+; if you want to use a data segment value, load into a register first.  Value is expected to be in AX register when invoked
+printNum MACRO num
+    LOCAL convertLoop, printLoop    ; define local labels
+
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov ax, num
+    mov bx, 10          ; Base 10
+    xor cx, cx          ; Clear CX
+
+convertLoop:
+    xor dx, dx          ; Clear DX for division
+    div bx              ; AX / 10, quotient in AX, remainder in DX
+    add dl, '0'         ; Convert remainder to ASCII
+    push dx             ; Push remainder onto stack
+    inc cx              ; Increment digit count
+    test ax, ax         ; Test if quotient is zero
+    jnz convertLoop     ; If not zero, repeat
+
+printLoop:
+    pop dx              ; Pop digit from stack
+    mov ah, 02h         ; DOS interrupt to print character
+    int 21h
+    loop printLoop     ; Loop until all digits are printed
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+ENDM
+
 getInput MACRO buffer
     mov ah, 0Ah     ; read buffered input
     lea dx, buffer  ; Load the effective address of the buffer into DX
@@ -56,34 +93,10 @@ getInput MACRO buffer
     print newline
 ENDM
 
-intToStr MACRO num, buffer
-    ; params:
-    ; num: integer to convert
-    ; buffer: pointer to destination buffer
-
-    mov ax, num
-    mov cx, 10
-    mov di, buffer
-    mov byte ptr [di], 0    ; null-terminate the string
-    add di, 5               ; move to end of buffer
-    dec di                  ; set pos to last digit
-
-    test ax, ax
-    jz ZeroCase:
-
-ConvertLoop:
-    xor dx, dx
-    div cx
-    add dl, '0'
-    mov [di], dl
-    dec di
-    test ax, ax
-    jnz ConvertLoop
-
-ZeroCase:
-    mov byte ptr [di], '0'
-    ret
-
+exitProgram MACRO
+    print exit_msg
+    mov ah,4Ch
+    int 21h
 ENDM
 
 ; main procedure
@@ -107,30 +120,35 @@ mainMenuLoop:
     ; if valid go to sell items
     mov al, [input_buffer+2] 
     cmp al, '2'
-    je exitProgram
+    je sellMenuLoop
 
     ; check for 3
     mov al, [input_buffer+2]
     cmp al, '3'
-    je exitProgram
+    exitProgram
 
     ; invalid input case
     println invalid_msg
     print input_msg
     jmp mainMenuLoop
 
+sellMenuLoop:
+    exitProgram
+
 displayMenuLoop:
     println valid_msg
 
     print bananas_str
-    println num_bananas 
-    
-    je exitProgram
+    mov ax, num_bananas
+    printNum ax
+    print newline
 
-exitProgram:
-    print exit_msg
-    mov ah,4Ch          ; exit function
-    int 21h             ; call DOS
+    print apples_str
+    mov ax, num_apples
+    printNum ax
+    print newline
+    
+    exitProgram
 
 main ENDP
 END main

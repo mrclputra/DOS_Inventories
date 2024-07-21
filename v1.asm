@@ -54,7 +54,7 @@ ENDM
 ; print number macro, designed to work with immediate values
 ; if you want to use a data segment value, load into a register first.  Value is expected to be in AX register when invoked
 printNum MACRO num
-    LOCAL convertLoop, printLoop    ; define local labels
+    LOCAL convertLoop, printLoop, highlightNum, convertLoopHighlight, printLoopHighlight, endPrintNum     ; define local labels
 
     push ax
     push bx
@@ -62,6 +62,9 @@ printNum MACRO num
     push dx
 
     mov ax, num
+    cmp ax, 3           ; compare with 3
+    jb highlightNum     ; if less than 3, jump to highlightnum
+
     mov bx, 10          ; Base 10
     xor cx, cx          ; Clear CX
 
@@ -79,7 +82,31 @@ printLoop:
     mov ah, 02h         ; DOS interrupt to print character
     int 21h
     loop printLoop     ; Loop until all digits are printed
+    jmp endPrintNum
 
+highlightNum:
+    mov bx, 10            ; Base 10
+    xor cx, cx            ; Clear CX
+
+convertLoopHighlight:
+    xor dx, dx            ; Clear DX for division
+    div bx                ; AX / 10, quotient in AX, remainder in DX
+    add dl, '0'           ; Convert remainder to ASCII
+    push dx               ; Push remainder onto stack
+    inc cx                ; Increment digit count
+    test ax, ax           ; Test if quotient is zero
+    jnz convertLoopHighlight ; If not zero, repeat
+
+printLoopHighlight:
+    pop dx                ; Pop digit from stack
+    mov ah, 09h           ; BIOS function to write character and attribute
+    mov al, dl            ; Load the digit character
+    mov bh, 0             ; Page number (usually 0)
+    mov bl, 45h           ; Attribute byte (foreground/background color)
+    int 10h               ; Call BIOS interrupt 10h to display character
+    loop printLoopHighlight ; Loop until all digits are printed
+
+endPrintNum:
     pop dx
     pop cx
     pop bx

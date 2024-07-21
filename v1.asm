@@ -11,14 +11,13 @@
     db ?                ; number of characters actually read
     db 20 dup('$')      ; space for input characters
 
-    prompt_return db 'Press any key to return to the menu...$', 0
+    prompt_return db 'Enter to return to the main menu...$', 0
     invalid_msg db 'Invalid Input$', 0
     valid_msg db 'Valid Input$', 0
     input_msg db 'Enter Input : $', 0
 
     ; menu 1
     main_menu db 'Inventory Management System', 0Dh, 0Ah, '1. Display Inventory', 0Dh, 0Ah, '2. Sell Items', 0Dh, 0Ah, '3. Exit', 0Dh, 0Ah, 'Enter Input: $', 0
-
     exit_msg db 'Program Terminated$', 0
 
     ; inventory

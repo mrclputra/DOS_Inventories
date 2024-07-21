@@ -11,6 +11,7 @@
     db ?                ; number of characters actually read
     db 20 dup('$')      ; space for input characters
 
+    prompt_return db 'Press any key to return to the menu...$', 0
     invalid_msg db 'Invalid Input$', 0
     valid_msg db 'Valid Input$', 0
     input_msg db 'Enter Input : $', 0
@@ -22,10 +23,12 @@
 
     ; inventory
     num_bananas dw 25   ; 16-bit integer value
-    num_apples dw 14    ; number of apples
+    num_apples dw 14
+    num_mangoes dw 18
 
     bananas_str db 'bananas : $', 0
     apples_str db 'apples : $', 0
+    mangoes_str db 'mangoes : $', 0
 
     newline db 0Dh, 0Ah, '$'    ; CR LF sequence for new line
     buffer db 6 dup('$')        ; buffer to store ASCII representations
@@ -104,6 +107,7 @@ main PROC
     mov ax,@data        ; load data segment
     mov ds,ax           ; initialize data segment register
 
+start:
     ; initialize main menu  
     print main_menu
 
@@ -137,6 +141,7 @@ sellMenuLoop:
 
 displayMenuLoop:
     println valid_msg
+    print newline
 
     print bananas_str
     mov ax, num_bananas
@@ -147,8 +152,15 @@ displayMenuLoop:
     mov ax, num_apples
     printNum ax
     print newline
+
+    print mangoes_str
+    mov ax, num_mangoes
+    printNum ax
+    println newline
     
-    exitProgram
+    print prompt_return
+    getInput input_buffer   ; placeholder
+    jmp start
 
 main ENDP
 END main

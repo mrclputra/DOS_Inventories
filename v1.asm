@@ -86,6 +86,23 @@ printLoop:
     pop ax
 ENDM
 
+printInventory MACRO
+    print bananas_str
+    mov ax, num_bananas
+    printNum ax
+    print newline
+
+    print apples_str
+    mov ax, num_apples
+    printNum ax
+    print newline
+
+    print mangoes_str
+    mov ax, num_mangoes
+    printNum ax
+    println newline
+ENDM
+
 getInput MACRO buffer
     mov ah, 0Ah     ; read buffered input
     lea dx, buffer  ; Load the effective address of the buffer into DX
@@ -142,20 +159,7 @@ displayMenuLoop:
     println valid_msg
     print newline
 
-    print bananas_str
-    mov ax, num_bananas
-    printNum ax
-    print newline
-
-    print apples_str
-    mov ax, num_apples
-    printNum ax
-    print newline
-
-    print mangoes_str
-    mov ax, num_mangoes
-    printNum ax
-    println newline
+    printInventory
     
     print prompt_return
     getInput input_buffer   ; placeholder

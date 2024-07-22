@@ -52,6 +52,7 @@ ENDM
 
 ; print number macro, designed to work with immediate values
 ; if you want to use a data segment value, load into a register first.  Value is expected to be in AX register when invoked
+; converts concrete values into ASCII number, uses stack
 printNum MACRO num
     LOCAL convertLoop, printLoop, highlightNum, convertLoopHighlight, printLoopHighlight, endPrintNum     ; define local labels
 

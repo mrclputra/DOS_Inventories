@@ -1,9 +1,10 @@
 .model small
 .stack 100h
 
-.data   ; data segment
+; define data segment contents here
+.data
 
-; data buffer for inputs
+; user input buffers
 input_buffer db 20
 db ?
 db 20 dup('$')
@@ -11,14 +12,16 @@ db 20 dup('$')
 ; utility messages
 input_msg db 'Enter Input : $', 0
 prompt_return db 'Enter to return to the main menu...$', 0
+
 invalid_msg db 'Invalid Input$', 0
 valid_msg db 'Valid Input$', 0
+
 exit_msg db 'Program Terminated$', 0
 
 newline db 0Dh, 0Ah, '$'    ; CR LF sequence for new line
 buffer db 6 dup('$')        ; buffer to store ASCII conversion representations
 
-; menus
+; menus 
 main_menu_msg db 'Inventory Management System', 0Dh, 0Ah, '1. Display Inventory', 0Dh, 0Ah, '2. Sell Items', 0Dh, 0Ah, '3. Exit', 0Dh, 0Ah, 'Enter Input: $', 0
 sell_menu_title db 'Select Item to Sell$' , 0
 sell_menu_exit db '4. return to main menu $', 0
@@ -27,16 +30,17 @@ sell_menu_exit db '4. return to main menu $', 0
 num_bananas dw 3    ; 16-bit integer value
 num_apples dw 2
 num_mangoes dw 5
-
 bananas_str db '1. bananas $', 0
 apples_str db '2. apples $', 0
 mangoes_str db '3. mangoes $', 0
-; expand inventory if needed
 
-.code   ; code segment
 
-print MACRO str 
-    mov dx, offset str   ; load the offset address of the parameter into dx
+; define code segment contents here
+.code
+
+print MACRO str
+    ; prints string from data segment
+    mov dx, offset str
     mov ah, 09h
     int 21h
 ENDM
@@ -49,10 +53,8 @@ println MACRO str
     mov ah, 09h
     int 21h
 ENDM
-
-; print number macro, designed to work with immediate values
-; if you want to use a data segment value, load into a register first.  Value is expected to be in AX register when invoked
-; converts concrete values into ASCII number, uses stack
+; macro to print numbers, works with immediate values
+; if you want to use a data segment variable, load it into AX register, then pass the register as parameter
 printNum MACRO num
     LOCAL convertLoop, printLoop, highlightNum, convertLoopHighlight, printLoopHighlight, endPrintNum     ; define local labels
 
@@ -65,46 +67,46 @@ printNum MACRO num
     cmp ax, 3           ; compare with 3
     jb highlightNum     ; if less than 3, jump to highlightnum
 
-    mov bx, 10          ; Base 10
-    xor cx, cx          ; Clear CX
+    mov bx, 10          ; base 10
+    xor cx, cx          ; clear CX
 
 convertLoop:
-    xor dx, dx          ; Clear DX for division
-    div bx              ; AX / 10, quotient in AX, remainder in DX
-    add dl, '0'         ; Convert remainder to ASCII
-    push dx             ; Push remainder onto stack
-    inc cx              ; Increment digit count
-    test ax, ax         ; Test if quotient is zero
-    jnz convertLoop     ; If not zero, repeat
+    xor dx, dx          ; clear dx for division
+    div bx              ; ax / 10, quotient in ax, remainder in dx
+    add dl, '0'         ; convert remainder to ASCII
+    push dx             ; push remainder onto stack
+    inc cx              ; increment digit count
+    test ax, ax         ; test if quotient is zero
+    jnz convertLoop     ; if not zero, repeat
 
 printLoop:
-    pop dx              ; Pop digit from stack
-    mov ah, 02h         ; DOS interrupt to print character
+    pop dx              ; pop digit from stack
+    mov ah, 02h         ; DOS interrupt print character
     int 21h
-    loop printLoop      ; Loop until all digits are printed
+    loop printLoop      ; loop until all digits in stack are printed
     jmp endPrintNum
 
 highlightNum:
-    mov bx, 10            ; Base 10
-    xor cx, cx            ; Clear CX
+    mov bx, 10          ; base 10
+    xor cx, cx          ; clear CX
 
 convertLoopHighlight:
-    xor dx, dx            ; Clear DX for division
-    div bx                ; AX / 10, quotient in AX, remainder in DX
-    add dl, '0'           ; Convert remainder to ASCII
-    push dx               ; Push remainder onto stack
-    inc cx                ; Increment digit count
-    test ax, ax           ; Test if quotient is zero
-    jnz convertLoopHighlight ; If not zero, repeat
+    xor dx, dx
+    div bx
+    add dl, '0'
+    push dx
+    inc cx
+    test ax, ax
+    jnz convertLoopHighlight
 
 printLoopHighlight:
-    pop dx                ; Pop digit from stack
-    mov ah, 09h           ; BIOS function to write character and attribute
-    mov al, dl            ; Load the digit character
-    mov bh, 0             ; Page number (usually 0)
-    mov bl, 4Fh           ; Attribute byte (foreground/background color)
-    int 10h               ; Call BIOS interrupt 10h to display character
-    loop printLoopHighlight ; Loop until all digits are printed
+    pop dx                  ; pop digit from stack
+    mov ah, 09h             ; BIOS function to write character and attribute
+    mov al, dl              ; load digit character
+    mov bh, 0               ; page number (usually 0)
+    mov bl, 4Fh             ; attribute byte (foreground/background color)
+    int 10h                 ; call BIOS interrupt 10h to display character
+    loop printLoopHighlight ; loop until all digits are printed
 
 endPrintNum:
     pop dx
@@ -113,6 +115,8 @@ endPrintNum:
     pop ax
 ENDM
 
+
+; prints inventory
 printInventory MACRO
     print bananas_str
     mov ax, num_bananas
@@ -130,26 +134,28 @@ printInventory MACRO
     print newline
 ENDM
 
+; decrease inventory item by 1, takes variable as parameter
 decrease MACRO var
     LOCAL noDecrease, done
 
     ; Check if the value is already 0
-    mov ax, var           ; Load the value of the variable into AX
-    cmp ax, 0             ; Compare AX with 0
+    mov ax, var           ; load the value of the variable into AX
+    cmp ax, 0             ; compare ax with 0
     je noDecrease         ; If equal (value is 0), skip the decrement
 
     ; Decrease the value
-    dec ax                ; Decrease the value by one
-    mov var, ax           ; Store the new value back into the variable
-    jmp done              ; Skip the noDecrease part
+    dec ax                ; decrease the value by one
+    mov var, ax           ; store the new value back into the variable
+    jmp done              ; exit
 
 noDecrease:
-    ; Value is already 0, do nothing
-    ; No action needed if value is 0
+    ; value is already 0, do nothing
+    ; no action needed
 
 done:
 ENDM
 
+; gets input from user, loaded into buffer passed in parameter
 getInput MACRO buffer
     mov ah, 0Ah
     lea dx, buffer
@@ -157,11 +163,15 @@ getInput MACRO buffer
     print newline
 ENDM
 
+; close/exit program
 exitProgram MACRO
     print exit_msg
     mov ah, 4Ch
     int 21h
 ENDM
+
+
+; procedures below
 
 displayMenu PROC
     ; procedure to display all items, accessed from main menu
@@ -207,7 +217,7 @@ validateSell:
     je exitSell
 
     ; Invalid input
-    print invalid_msg
+    println invalid_msg
     print input_msg
     jmp validateSell
 
@@ -271,6 +281,7 @@ exitMain:
 
 mainMenu ENDP
 
+; main procedure
 main PROC
     mov ax, @data   ; load data segment
     mov ds, ax      ; initialize data segment register

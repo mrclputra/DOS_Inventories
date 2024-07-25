@@ -235,7 +235,7 @@ decMangoes:
 
 exitSell:
     print newline
-    print exit_msg          ; Ensure this message is defined in .data
+    print exit_msg
     ret
 sellMenu ENDP
 
@@ -254,7 +254,7 @@ validateMain:
     je dspMenu
 
     ; check for 2
-    mov al, [input_buffer+2]  ; load the first character of input into AL
+    mov al, [input_buffer+2]
     cmp al, '2'
     je sllMenu
 

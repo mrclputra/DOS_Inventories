@@ -235,7 +235,6 @@ decMangoes:
 
 exitSell:
     print newline
-    print exit_msg
     ret
 sellMenu ENDP
 

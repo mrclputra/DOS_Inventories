@@ -34,7 +34,6 @@ bananas_str db '1. bananas $', 0
 apples_str db '2. apples $', 0
 mangoes_str db '3. mangoes $', 0
 
-
 ; define code segment contents here
 .code
 
@@ -53,6 +52,7 @@ println MACRO str
     mov ah, 09h
     int 21h
 ENDM
+
 ; macro to print numbers, works with immediate values
 ; if you want to use a data segment variable, load it into AX register, then pass the register as parameter
 printNum MACRO num
